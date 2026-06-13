@@ -89,8 +89,14 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`🔗 Health: http://localhost:${PORT}/api/health`);
-  console.log('EveryThing is Working Fine')
-});
+
+// Only listen locally — Vercel handles the server itself
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🔗 Health: http://localhost:${PORT}/api/health`);
+    console.log('EveryThing is Working Fine')
+  });
+}
+
+module.exports = app;
