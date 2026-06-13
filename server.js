@@ -24,10 +24,9 @@ const app = express();
 app.use(helmet());  
 app.use(cors({
   origin: [
-    "https://spectacular-pony-4e393c.netlify.app",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175"
+    process.env.CLIENT_URL || "http://localhost:5173",
+    process.env.ADMIN_CLIENT_URL || "http://localhost:5174",
+    "http://localhost:5175",
   ],
   credentials: true,
 }));
