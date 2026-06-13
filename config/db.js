@@ -1,22 +1,19 @@
 const mongoose = require("mongoose");
-const dns = require("dns")
 
+let isConnected = false;
 
-dns.setServers([
-  '1.1.1.1',
-  '8.8.8.8'
-])
 const connectDB = async () => {
+  if (isConnected) return;
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 30000,  
-      socketTimeoutMS:          45000,   
-    });    
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS:          45000,
+    });
+    isConnected = true;
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`❌ MongoDB Error: ${error.message}`);
-    process.exit(1);
-  }     
+  }
 };
- 
+
 module.exports = connectDB;
