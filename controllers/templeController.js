@@ -27,6 +27,8 @@ exports.getAllTemples = async (req, res, next) => {
     if (sort === "Name Z-A") sortBy = "-name";
     if (sort === "Rating")   sortBy = "-rating";
 
+    console.log("REQ QUERY:", req.query);
+console.log("MONGO QUERY:", query);
     const skip  = (page - 1) * limit;
     const total = await Temple.countDocuments(query);
 

@@ -6,6 +6,7 @@ const helmet       = require("helmet");
 const morgan       = require("morgan");
 const connectDB    = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
+const deityRoutes = require("./routes/deityRoutes");
 
 // ── Routes ──
 const authRoutes     = require("./routes/authRoutes");
@@ -41,6 +42,7 @@ app.use("/api/districts", districtRoutes);
 app.use("/api/festivals", festivalRoutes);
 app.use("/api/blogs",     blogRoutes);
 app.use("/api/upload",    uploadRoutes);
+app.use("/api/deities", deityRoutes);
 
 
 // ── Nested review route: /api/temples/:templeId/reviews ──
