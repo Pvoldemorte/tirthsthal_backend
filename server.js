@@ -24,9 +24,9 @@ const app = express();
 app.use(helmet());  
 app.use(cors({
   origin: [
-    process.env.CLIENT_URL || "http://localhost:5173", "https://tirthsthal-backend.vercel.app/api",
+    process.env.CLIENT_URL || "http://localhost:5173", "https://tirthsthal.netlify.app",
     process.env.ADMIN_CLIENT_URL || "http://localhost:5174",
-    "http://localhost:5175", "https://tirthsthal-backend.vercel.app/api",
+    "http://localhost:5175", "https://tirthsthal.netlify.app",
   ],
   credentials: true,
 }));
