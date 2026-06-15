@@ -7,7 +7,7 @@ const connectDB = require("./config/db");
 const User = require("./models/User");
 
 const ADMIN_NAME     = "Admin";
-const ADMIN_EMAIL    = "admin@tirthsthal.com";
+const ADMIN_EMAIL    = "admin@ts.com";
 const ADMIN_PASSWORD = "Admin@123"; // change after first login
 
 (async () => {

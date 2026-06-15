@@ -49,10 +49,16 @@ const TempleSchema = new mongoose.Schema({
 
   images: [String],
 
-  coordinates: {
-    lat: Number,
-    lng: Number,
+ coordinates: {
+  latitude: {
+    type: Number,
+    required: true,
   },
+  longitude: {
+    type: Number,
+    required: true,
+  },
+},
 
   rating: {
     type:    Number,

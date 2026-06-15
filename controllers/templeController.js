@@ -26,9 +26,6 @@ exports.getAllTemples = async (req, res, next) => {
     if (sort === "Name A-Z") sortBy = "name";
     if (sort === "Name Z-A") sortBy = "-name";
     if (sort === "Rating")   sortBy = "-rating";
-
-    console.log("REQ QUERY:", req.query);
-console.log("MONGO QUERY:", query);
     const skip  = (page - 1) * limit;
     const total = await Temple.countDocuments(query);
 
@@ -92,13 +89,11 @@ exports.updateTemple = async (req, res, next) => {
 // ── Temple delete करो (Admin) ──
 exports.deleteTemple = async (req, res, next) => {
   try {
-    const temple = await Temple.findByIdAndUpdate(
-      req.params.id, { isActive: false }, { new: true }
-    );
+    const temple = await Temple.findByIdAndDelete(req.params.id);
     if (!temple) {
       return res.status(404).json({ success: false, message: "Temple not found" });
     }
-    res.status(200).json({ success: true, message: "Temple deleted" });
+    res.status(200).json({ success: true, message: "Temple permanently deleted" });
   } catch (error) {
     next(error);
   }

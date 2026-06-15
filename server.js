@@ -6,7 +6,7 @@ const helmet       = require("helmet");
 const morgan       = require("morgan");
 const connectDB    = require("./config/db");
 const errorHandler = require("./middleware/errorHandler");
-const deityRoutes = require("./routes/deityRoutes");
+// const deityRoutes = require("./routes/deityRoutes");
 
 // ── Routes ──
 const authRoutes     = require("./routes/authRoutes");
@@ -26,8 +26,7 @@ app.use(helmet());
 app.use(cors({
   origin: [
     process.env.CLIENT_URL || "http://localhost:5173", "https://tirthsthal.netlify.app",
-    process.env.ADMIN_CLIENT_URL || "http://localhost:5174",
-    "http://localhost:5175", "https://tirthsthal.netlify.app",
+    process.env.ADMIN_CLIENT_URL || "http://localhost:5173","http://localhost:5175", "http://localhost:3000", 
   ],
   credentials: true,
 }));
@@ -42,7 +41,7 @@ app.use("/api/districts", districtRoutes);
 app.use("/api/festivals", festivalRoutes);
 app.use("/api/blogs",     blogRoutes);
 app.use("/api/upload",    uploadRoutes);
-app.use("/api/deities", deityRoutes);
+// app.use("/api/deities", deityRoutes);
 
 
 // ── Nested review route: /api/temples/:templeId/reviews ──
