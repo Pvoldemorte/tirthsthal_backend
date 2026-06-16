@@ -1,4 +1,5 @@
 const Temple = require("../models/Temple");
+const District = require("../models/District");
 
 // ── सभी temples ──
 exports.getAllTemples = async (req, res, next) => {
@@ -151,6 +152,83 @@ exports.addToFavorites = async (req, res, next) => {
       message: "Added to favorites",
       favorites: user.favorites,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+const syncDistrict = async (districtName, state) => {
+  if (!districtName || !state) return;
+  await District.findOneAndUpdate(
+    { name: new RegExp(`^${districtName}$`, "i") },
+    {
+      $setOnInsert: {
+        name:  districtName,
+        state: state,
+        slug:  districtName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      },
+    },
+    { upsert: true, new: true }
+  );
+};
+
+// Update temple count in district
+const updateDistrictCount = async (districtName) => {
+  if (!districtName) return;
+  const count = await Temple.countDocuments({
+    district: new RegExp(`^${districtName}$`, "i"),
+    isActive: true,
+  });
+  await District.findOneAndUpdate(
+    { name: new RegExp(`^${districtName}$`, "i") },
+    { templeCount: count }
+  );
+};
+
+exports.createTemple = async (req, res, next) => {
+  try {
+    const temple = await Temple.create(req.body);
+
+    // Auto-create district + update count
+    await syncDistrict(req.body.district, req.body.state);
+    await updateDistrictCount(req.body.district);
+
+    res.status(201).json({ success: true, temple });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateTemple = async (req, res, next) => {
+  try {
+    const temple = await Temple.findByIdAndUpdate(req.params.id, req.body, {
+      new: true, runValidators: true,
+    });
+    if (!temple) {
+      return res.status(404).json({ success: false, message: "Temple not found" });
+    }
+
+    // Sync district count after update
+    await updateDistrictCount(temple.district);
+
+    res.status(200).json({ success: true, temple });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deleteTemple = async (req, res, next) => {
+  try {
+    const temple = await Temple.findByIdAndDelete(req.params.id);
+    if (!temple) {
+      return res.status(404).json({ success: false, message: "Temple not found" });
+    }
+
+    // Update district count after delete
+    await updateDistrictCount(temple.district);
+
+    res.status(200).json({ success: true, message: "Temple permanently deleted" });
   } catch (error) {
     next(error);
   }
