@@ -25,7 +25,7 @@ const app = express();
 app.use(helmet());  
 app.use(cors({
   origin: [
-    process.env.CLIENT_URL || "http://localhost:5173", "https://tirthsthal.netlify.app",
+    process.env.CLIENT_URL || "http://localhost:5173","http://localhost:5174", "https://tirthsthal.netlify.app",
     process.env.ADMIN_CLIENT_URL || "http://localhost:5173","http://localhost:5175", "http://localhost:3000", 
   ],
   credentials: true,
