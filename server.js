@@ -22,28 +22,14 @@ connectDB();
 const app = express();
 
 // ── Middleware ──
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",  // ← admin panel
-  "http://localhost:5175",
-  "http://localhost:3000",
-  "https://tirthsthal.netlify.app",
-  process.env.CLIENT_URL,
-  process.env.ADMIN_CLIENT_URL,
-].filter(Boolean);
-
+app.use(helmet());  
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS blocked: ${origin}`));
-  },
+  origin: [
+    process.env.CLIENT_URL || "http://localhost:5173", "https://tirthsthal.netlify.app",
+    process.env.ADMIN_CLIENT_URL || "http://localhost:5173","http://localhost:5175", "http://localhost:3000", 
+  ],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
 }));
-
-app.options("*", cors());
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
