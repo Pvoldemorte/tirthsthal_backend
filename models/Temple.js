@@ -42,6 +42,10 @@ const TempleSchema = new mongoose.Schema({
     type: Map,
     of:   String,
   },
+  districtCover: {
+  type: Boolean,
+  default: false,
+},
 
   facilities:    [String],
   nearbyTemples: [String],

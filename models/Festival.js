@@ -30,7 +30,6 @@ FestivalSchema.pre("save", function (next) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
   }
-  next();
 });
 
 module.exports = mongoose.model("Festival", FestivalSchema);

@@ -192,6 +192,20 @@ exports.createTemple = async (req, res, next) => {
 
     // Auto-create district + update count
     await syncDistrict(req.body.district, req.body.state);
+    if (
+  req.body.districtCover &&
+  req.body.images &&
+  req.body.images.length
+) {
+  await District.findOneAndUpdate(
+    {
+      name: new RegExp(`^${req.body.district}$`, "i"),
+    },
+    {
+      image: req.body.images[0],
+    }
+  );
+}
     await updateDistrictCount(req.body.district);
 
     res.status(201).json({ success: true, temple });
@@ -200,23 +214,102 @@ exports.createTemple = async (req, res, next) => {
   }
 };
 
-exports.updateTemple = async (req, res, next) => {
+exports.createTemple = async (req, res, next) => {
   try {
-    const temple = await Temple.findByIdAndUpdate(req.params.id, req.body, {
-      new: true, runValidators: true,
+    const temple = await Temple.create(req.body);
+
+    // Auto-create district if not exists
+    await syncDistrict(
+      req.body.district,
+      req.body.state
+    );
+
+    // Get district
+    const district = await District.findOne({
+      name: new RegExp(
+        `^${req.body.district}$`,
+        "i"
+      ),
     });
-    if (!temple) {
-      return res.status(404).json({ success: false, message: "Temple not found" });
+
+    // If district has no image yet,
+    // use first temple image as district image
+    if (
+      district &&
+      !district.image &&
+      req.body.images &&
+      req.body.images.length > 0
+    ) {
+      district.image = req.body.images[0];
+      await district.save();
     }
 
-    // Sync district count after update
-    await updateDistrictCount(temple.district);
+    // Update temple count
+    await updateDistrictCount(
+      req.body.district
+    );
 
-    res.status(200).json({ success: true, temple });
+    res.status(201).json({
+      success: true,
+      temple,
+    });
   } catch (error) {
     next(error);
   }
 };
+
+exports.updateTemple = async (req, res, next) => {
+  try {
+    const temple =
+      await Temple.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+    if (!temple) {
+      return res.status(404).json({
+        success: false,
+        message: "Temple not found",
+      });
+    }
+
+    // If district image is empty,
+    // use temple first image
+    const district = await District.findOne({
+      name: new RegExp(
+        `^${temple.district}$`,
+        "i"
+      ),
+    });
+
+    if (
+      district &&
+      !district.image &&
+      temple.images &&
+      temple.images.length > 0
+    ) {
+      district.image = temple.images[0];
+      await district.save();
+    }
+
+    await updateDistrictCount(
+      temple.district
+    );
+
+    res.status(200).json({
+      success: true,
+      temple,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
 exports.deleteTemple = async (req, res, next) => {
   try {
