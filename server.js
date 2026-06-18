@@ -22,14 +22,30 @@ connectDB();
 const app = express();
 
 // ── Middleware ──
-app.use(helmet());  
-app.use(cors({
-  origin: [
-    process.env.CLIENT_URL || "http://localhost:5173","http://localhost:5174", "https://tirthsthal.netlify.app",
-    process.env.ADMIN_CLIENT_URL || "https://tirthsthal-admin.netlify.app/", "http://localhost:5173","http://localhost:5175", "http://localhost:3000", 
-  ],
-  credentials: true,
-}));
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowed = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:3000",
+    "https://tirthsthal.netlify.app",
+    process.env.CLIENT_URL,
+    process.env.ADMIN_CLIENT_URL,
+  ].filter(Boolean);
+
+  if (!origin || allowed.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  }
+
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
+
+// Remove the old app.use(cors({...})) line completely
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
