@@ -42,7 +42,6 @@ app.use((req, res, next) => {
   }
 
   if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
 });
 
 // Remove the old app.use(cors({...})) line completely

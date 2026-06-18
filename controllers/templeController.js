@@ -1,163 +1,7 @@
-const Temple = require("../models/Temple");
+const Temple   = require("../models/Temple");
 const District = require("../models/District");
 
-// ── सभी temples ──
-exports.getAllTemples = async (req, res, next) => {
-  try {
-    const {
-      search, state, district, deity,
-      type, sort, page = 1, limit = 12
-    } = req.query;
-
-    const query = { isActive: true };
-
-    // Search
-    if (search) {
-      query.$text = { $search: search };
-    }
-
-    // Filters
-    if (state    && state    !== "All States")    query.state    = state;
-    if (district && district !== "All Districts") query.district = district;
-    if (deity    && deity    !== "All Deities")   query.deity    = new RegExp(deity,    "i");
-    if (type     && type     !== "All Types")     query.type     = new RegExp(type,     "i");
-
-    // Sort
-    let sortBy = "-createdAt";
-    if (sort === "Name A-Z") sortBy = "name";
-    if (sort === "Name Z-A") sortBy = "-name";
-    if (sort === "Rating")   sortBy = "-rating";
-    const skip  = (page - 1) * limit;
-    const total = await Temple.countDocuments(query);
-
-    const temples = await Temple
-      .find(query)
-      .sort(sortBy)
-      .skip(skip)
-      .limit(Number(limit));
-
-    res.status(200).json({
-      success: true,
-      total,
-      page:       Number(page),
-      totalPages: Math.ceil(total / limit),
-      temples,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ── Single temple by slug ──
-exports.getTempleBySlug = async (req, res, next) => {
-  try {
-    const temple = await Temple.findOne({ slug: req.params.slug });
-    if (!temple) {
-      return res.status(404).json({ success: false, message: "Temple not found" });
-    }
-    res.status(200).json({ success: true, temple });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ── Temple add करो (Admin) ──
-exports.createTemple = async (req, res, next) => {
-  try {
-    const temple = await Temple.create(req.body);
-    console.log("hello")
-    res.status(201).json({ success: true, temple });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ── Temple update करो (Admin) ──
-exports.updateTemple = async (req, res, next) => {
-  try {
-    const temple = await Temple.findByIdAndUpdate(
-      req.params.id, req.body, { new: true, runValidators: true }
-    );
-    if (!temple) {
-      return res.status(404).json({ success: false, message: "Temple not found" });
-    }
-    res.status(200).json({ success: true, temple });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ── Temple delete करो (Admin) ──
-exports.deleteTemple = async (req, res, next) => {
-  try {
-    const temple = await Temple.findByIdAndDelete(req.params.id);
-    if (!temple) {
-      return res.status(404).json({ success: false, message: "Temple not found" });
-    }
-    res.status(200).json({ success: true, message: "Temple permanently deleted" });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ── Search suggestions ──
-exports.searchSuggestions = async (req, res, next) => {
-  try {
-    const { q } = req.query;
-    if (!q || q.length < 2) {
-      return res.status(200).json({ success: true, suggestions: [] });
-    }
-
-    const temples = await Temple.find({
-      $or: [
-        { name:     new RegExp(q, "i") },
-        { deity:    new RegExp(q, "i") },
-        { district: new RegExp(q, "i") },
-        { type:     new RegExp(q, "i") },
-      ],
-      isActive: true,
-    })
-    .select("name slug deity district state type images")
-    .limit(8);
-
-    res.status(200).json({ success: true, suggestions: temples });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ── Favorites ──
-exports.addToFavorites = async (req, res, next) => {
-  try {
-    const User   = require("../models/User");
-    const user   = await User.findById(req.user.id);
-    const templeId = req.params.id;
-
-    if (user.favorites.includes(templeId)) {
-      user.favorites = user.favorites.filter(
-        (id) => id.toString() !== templeId
-      );
-      await user.save();
-      return res.status(200).json({
-        success: true,
-        message: "Removed from favorites",
-        favorites: user.favorites,
-      });
-    }
-
-    user.favorites.push(templeId);
-    await user.save();
-    res.status(200).json({
-      success: true,
-      message: "Added to favorites",
-      favorites: user.favorites,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-
+// ── Helper: auto-create district ──
 const syncDistrict = async (districtName, state) => {
   if (!districtName || !state) return;
   await District.findOneAndUpdate(
@@ -173,7 +17,7 @@ const syncDistrict = async (districtName, state) => {
   );
 };
 
-// Update temple count in district
+// ── Helper: update district temple count ──
 const updateDistrictCount = async (districtName) => {
   if (!districtName) return;
   const count = await Temple.countDocuments({
@@ -186,142 +30,143 @@ const updateDistrictCount = async (districtName) => {
   );
 };
 
+// ── Get All Temples ──
+exports.getAllTemples = async (req, res, next) => {
+  try {
+    const {
+      search, state, district, deity,
+      type, sort, page = 1, limit = 12
+    } = req.query;
+
+    const query = { isActive: true };
+
+    if (search)   query.$text    = { $search: search };
+    if (state    && state    !== "All States")    query.state    = state;
+    if (district && district !== "All Districts") query.district = district;
+    if (deity    && deity    !== "All Deities")   query.deity    = new RegExp(deity,  "i");
+    if (type     && type     !== "All Types")     query.type     = new RegExp(type,   "i");
+
+    let sortBy = "-createdAt";
+    if (sort === "Name A-Z") sortBy = "name";
+    if (sort === "Name Z-A") sortBy = "-name";
+    if (sort === "Rating")   sortBy = "-rating";
+
+    const skip  = (page - 1) * limit;
+    const total = await Temple.countDocuments(query);
+    const temples = await Temple.find(query).sort(sortBy).skip(skip).limit(Number(limit));
+
+    res.status(200).json({ success: true, total, page: Number(page), totalPages: Math.ceil(total / limit), temples });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── Get Temple by Slug ──
+exports.getTempleBySlug = async (req, res, next) => {
+  try {
+    const temple = await Temple.findOne({ slug: req.params.slug });
+    if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
+
+    const templeObj = temple.toObject();
+
+    if (templeObj.nearbyTemples?.length) {
+      const nearbyDocs = await Temple.find({
+        name: { $in: templeObj.nearbyTemples },
+        _id:  { $ne: temple._id },
+      }).select("name slug images district state");
+
+      templeObj.nearby = nearbyDocs.map((t) => ({
+        name:     t.name,
+        slug:     t.slug,
+        image:    t.images?.[0] || "/images/placeholder-temple.jpg",
+        distance: "-",
+      }));
+    } else {
+      templeObj.nearby = [];
+    }
+
+    res.status(200).json({ success: true, temple: templeObj });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── Create Temple ──
 exports.createTemple = async (req, res, next) => {
   try {
     const temple = await Temple.create(req.body);
-
-    // Auto-create district + update count
     await syncDistrict(req.body.district, req.body.state);
-    if (
-  req.body.districtCover &&
-  req.body.images &&
-  req.body.images.length
-) {
-  await District.findOneAndUpdate(
-    {
-      name: new RegExp(`^${req.body.district}$`, "i"),
-    },
-    {
-      image: req.body.images[0],
-    }
-  );
-}
     await updateDistrictCount(req.body.district);
-
     res.status(201).json({ success: true, temple });
   } catch (error) {
     next(error);
   }
 };
 
-exports.createTemple = async (req, res, next) => {
-  try {
-    const temple = await Temple.create(req.body);
-
-    // Auto-create district if not exists
-    await syncDistrict(
-      req.body.district,
-      req.body.state
-    );
-
-    // Get district
-    const district = await District.findOne({
-      name: new RegExp(
-        `^${req.body.district}$`,
-        "i"
-      ),
-    });
-
-    // If district has no image yet,
-    // use first temple image as district image
-    if (
-      district &&
-      !district.image &&
-      req.body.images &&
-      req.body.images.length > 0
-    ) {
-      district.image = req.body.images[0];
-      await district.save();
-    }
-
-    // Update temple count
-    await updateDistrictCount(
-      req.body.district
-    );
-
-    res.status(201).json({
-      success: true,
-      temple,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
+// ── Update Temple ──
 exports.updateTemple = async (req, res, next) => {
   try {
-    const temple =
-      await Temple.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        {
-          new: true,
-          runValidators: true,
-        }
-      );
-
-    if (!temple) {
-      return res.status(404).json({
-        success: false,
-        message: "Temple not found",
-      });
-    }
-
-    // If district image is empty,
-    // use temple first image
-    const district = await District.findOne({
-      name: new RegExp(
-        `^${temple.district}$`,
-        "i"
-      ),
+    const temple = await Temple.findByIdAndUpdate(req.params.id, req.body, {
+      new: true, runValidators: true,
     });
-
-    if (
-      district &&
-      !district.image &&
-      temple.images &&
-      temple.images.length > 0
-    ) {
-      district.image = temple.images[0];
-      await district.save();
-    }
-
-    await updateDistrictCount(
-      temple.district
-    );
-
-    res.status(200).json({
-      success: true,
-      temple,
-    });
+    if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
+    await updateDistrictCount(temple.district);
+    res.status(200).json({ success: true, temple });
   } catch (error) {
     next(error);
   }
 };
 
-
-
+// ── Delete Temple ──
 exports.deleteTemple = async (req, res, next) => {
   try {
     const temple = await Temple.findByIdAndDelete(req.params.id);
-    if (!temple) {
-      return res.status(404).json({ success: false, message: "Temple not found" });
+    if (!temple) return res.status(404).json({ success: false, message: "Temple not found" });
+    await updateDistrictCount(temple.district);
+    res.status(200).json({ success: true, message: "Temple permanently deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── Search Suggestions ──
+exports.searchSuggestions = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.length < 2) return res.status(200).json({ success: true, suggestions: [] });
+
+    const temples = await Temple.find({
+      $or: [
+        { name:     new RegExp(q, "i") },
+        { deity:    new RegExp(q, "i") },
+        { district: new RegExp(q, "i") },
+        { type:     new RegExp(q, "i") },
+      ],
+      isActive: true,
+    }).select("name slug deity district state type images").limit(8);
+
+    res.status(200).json({ success: true, suggestions: temples });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── Favorites ──
+exports.addToFavorites = async (req, res, next) => {
+  try {
+    const User     = require("../models/User");
+    const user     = await User.findById(req.user.id);
+    const templeId = req.params.id;
+
+    if (user.favorites.includes(templeId)) {
+      user.favorites = user.favorites.filter((id) => id.toString() !== templeId);
+      await user.save();
+      return res.status(200).json({ success: true, message: "Removed from favorites", favorites: user.favorites });
     }
 
-    // Update district count after delete
-    await updateDistrictCount(temple.district);
-
-    res.status(200).json({ success: true, message: "Temple permanently deleted" });
+    user.favorites.push(templeId);
+    await user.save();
+    res.status(200).json({ success: true, message: "Added to favorites", favorites: user.favorites });
   } catch (error) {
     next(error);
   }
