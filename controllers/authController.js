@@ -120,7 +120,8 @@ exports.forgotPassword = async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     // ── Reset URL banao ──
-    const resetUrl = `${process.env.CLIENT_URL}/auth/reset-password/${resetToken}`;
+    const baseUrl = process.env.CLIENT_URL || "https://tirthsthal.netlify.app";
+    const resetUrl = `${baseUrl}/auth/reset-password/${resetToken}`;
 
     // ── Email bhejo ──
     const html = `
