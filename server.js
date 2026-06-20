@@ -17,7 +17,7 @@ const blogRoutes     = require("./routes/blogRoutes");
 const reviewRoutes   = require("./routes/reviewRoutes");
 const uploadRoutes   = require("./routes/uploadRoutes");
 
-connectDB();
+// connectDB();
 
 const app = express();
 
