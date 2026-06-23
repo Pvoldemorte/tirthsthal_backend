@@ -3,8 +3,11 @@ const Blog = require("../models/Blog");
 // ── सभी Blogs ──
 exports.getAllBlogs = async (req, res, next) => {
   try {
-    const { category, tag, search, page = 1, limit = 9 } = req.query;
-    const query = { isPublished: true };
+    const { category, tag, search, page = 1, limit = 9, all } = req.query;
+    const query = {};
+
+    // Public site sirf published blogs maange, admin panel "all=true" se draft bhi dekh sake
+    if (all !== "true") query.isPublished = true;
 
     if (category) query.category = category;
     if (tag)      query.tags     = tag;
@@ -18,7 +21,7 @@ exports.getAllBlogs = async (req, res, next) => {
       .sort("-createdAt")
       .skip(skip)
       .limit(Number(limit))
-      .select("-content"); // list me content mat bhejo, heavy hai
+      .select(all === "true" ? "" : "-content"); // admin list me content bhi chahiye agar zaroorat ho
 
     res.status(200).json({
       success: true,
@@ -99,11 +102,14 @@ exports.updateBlog = async (req, res, next) => {
   }
 };
 
-// ── Blog delete (Admin) ──
+// ── Blog delete (Admin) — permanent delete ──
 exports.deleteBlog = async (req, res, next) => {
   try {
-    await Blog.findByIdAndUpdate(req.params.id, { isPublished: false });
-    res.status(200).json({ success: true, message: "Blog deleted" });
+    const blog = await Blog.findByIdAndDelete(req.params.id);
+    if (!blog) {
+      return res.status(404).json({ success: false, message: "Blog not found" });
+    }
+    res.status(200).json({ success: true, message: "Blog permanently deleted" });
   } catch (error) {
     next(error);
   }

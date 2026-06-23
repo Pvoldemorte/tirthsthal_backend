@@ -171,3 +171,58 @@ exports.addToFavorites = async (req, res, next) => {
     next(error);
   }
 };
+
+// ── Get my favorite temples, fully populated ──
+exports.getMyFavoriteTemples = async (req, res, next) => {
+  try {
+    const User = require("../models/User");
+    const user = await User.findById(req.user.id).populate("favorites");
+    res.status(200).json({ success: true, count: user.favorites.length, temples: user.favorites });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── Mark a temple as visited by the logged-in user ──
+exports.markTempleVisited = async (req, res, next) => {
+  try {
+    const User     = require("../models/User");
+    const templeId = req.params.id;
+    const user     = await User.findById(req.user.id);
+
+    const already = user.visitedTemples.some(
+      (v) => v.temple.toString() === templeId
+    );
+
+    if (!already) {
+      user.visitedTemples.push({ temple: templeId, visitedAt: new Date() });
+      await user.save();
+    }
+
+    res.status(200).json({ success: true, message: "Marked as visited", visitedCount: user.visitedTemples.length });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── Get my visited temples, fully populated, most recent first ──
+exports.getMyVisitedTemples = async (req, res, next) => {
+  try {
+    const User = require("../models/User");
+    const user = await User
+      .findById(req.user.id)
+      .populate("visitedTemples.temple");
+
+    const visited = user.visitedTemples
+      .filter((v) => v.temple) // guard against deleted temples
+      .sort((a, b) => new Date(b.visitedAt) - new Date(a.visitedAt))
+      .map((v) => ({
+        ...v.temple.toObject(),
+        visitedAt: v.visitedAt,
+      }));
+
+    res.status(200).json({ success: true, count: visited.length, temples: visited });
+  } catch (error) {
+    next(error);
+  }
+};

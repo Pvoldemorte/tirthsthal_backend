@@ -1,6 +1,20 @@
 const Review = require("../models/Review");
 const Temple = require("../models/Temple");
 
+// ── Sab reviews jo maine likhe (across all temples) ──
+exports.getMyReviews = async (req, res, next) => {
+  try {
+    const reviews = await Review
+      .find({ user: req.user.id })
+      .populate("temple", "name slug images district state")
+      .sort("-createdAt");
+
+    res.status(200).json({ success: true, count: reviews.length, reviews });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ── Temple ke reviews ──
 exports.getTempleReviews = async (req, res, next) => {
   try {

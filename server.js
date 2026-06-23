@@ -47,6 +47,11 @@ app.use("/api/upload",    uploadRoutes);
 // ── Nested review route: /api/temples/:templeId/reviews ──
 app.use("/api/temples/:templeId/reviews", reviewRoutes);
 
+// ── My reviews (across all temples) ──
+const { protect: protectMyReviews } = require("./middleware/auth");
+const { getMyReviews } = require("./controllers/reviewController");
+app.get("/api/my-reviews", protectMyReviews, getMyReviews);
+
 // ── Health Check ──
 app.get("/api/health", (req, res) => {
   res.status(200).json({

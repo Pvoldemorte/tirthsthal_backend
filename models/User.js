@@ -26,6 +26,19 @@ const UserSchema = new mongoose.Schema({
     type:    String,
     default: "",
   },
+  phone: {
+    type:    String,
+    default: "",
+  },
+  city: {
+    type:    String,
+    default: "",
+  },
+  bio: {
+    type:      String,
+    default:   "",
+    maxlength: [300, "Bio cannot exceed 300 characters"],
+  },
   role: {
     type:    String,
     enum:    ["user", "admin"],
@@ -33,13 +46,27 @@ const UserSchema = new mongoose.Schema({
   },
   language: {
     type:    String,
-    enum:    ["en", "hi", "mr", "gu"],
+    enum:    ["en", "hi", "mr", "gu", "English", "हिंदी", "मराठी", "ગુજરાતી"],
     default: "en",
   },
   favorites: [{
     type: mongoose.Schema.Types.ObjectId,
     ref:  "Temple",
   }],
+  visitedTemples: [{
+    temple:    { type: mongoose.Schema.Types.ObjectId, ref: "Temple" },
+    visitedAt: { type: Date, default: Date.now },
+  }],
+  notificationSettings: {
+    festivalReminders: { type: Boolean, default: true },
+    newTempleAdded:    { type: Boolean, default: true },
+    reviewReplies:     { type: Boolean, default: false },
+    weeklyNewsletter:  { type: Boolean, default: false },
+  },
+  privacySettings: {
+    showFavoritesPublicly: { type: Boolean, default: true },
+    showReviewsPublicly:   { type: Boolean, default: true },
+  },
   isVerified: {
     type:    Boolean,
     default: false,

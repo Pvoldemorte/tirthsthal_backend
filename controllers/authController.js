@@ -247,13 +247,100 @@ exports.resetPassword = async (req, res, next) => {
 // ── Update Profile ──
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { name, language } = req.body;
+    const { name, language, phone, city, bio, avatar } = req.body;
+
+    // Only set fields that were actually sent (so partial updates work)
+    const updates = {};
+    if (name     !== undefined) updates.name     = name;
+    if (language !== undefined) updates.language = language;
+    if (phone    !== undefined) updates.phone    = phone;
+    if (city     !== undefined) updates.city     = city;
+    if (bio      !== undefined) updates.bio      = bio;
+    if (avatar   !== undefined) updates.avatar   = avatar;
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { name, language },
+      updates,
       { new: true, runValidators: true }
     );
+
     res.status(200).json({ success: true, user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── Change Password (logged-in user, knows current password) ──
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide current and new password",
+      });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters",
+      });
+    }
+
+    const user = await User.findById(req.user.id).select("+password");
+
+    // Google-only accounts may not have a password set
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "This account uses Google Sign-In and has no password to change",
+      });
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── Update Notification / Privacy Settings ──
+exports.updateSettings = async (req, res, next) => {
+  try {
+    const { notificationSettings, privacySettings } = req.body;
+    const updates = {};
+
+    if (notificationSettings) updates.notificationSettings = notificationSettings;
+    if (privacySettings)      updates.privacySettings       = privacySettings;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── Delete My Account ──
+exports.deleteAccount = async (req, res, next) => {
+  try {
+    await User.findByIdAndDelete(req.user.id);
+    res.status(200).json({ success: true, message: "Account deleted successfully" });
   } catch (error) {
     next(error);
   }
