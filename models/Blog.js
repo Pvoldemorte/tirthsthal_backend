@@ -7,6 +7,7 @@ const BlogSchema = new mongoose.Schema({
   author:    String,
   authorAvatar: String,
   thumbnail: String,
+  images:    [String], // extra pictures shown between paragraphs in the blog body
   excerpt:   String,
   content:   String,
   tags:      [String],
